@@ -85,8 +85,7 @@ class _RenewState extends State<Renew> {
 
                 var route = snapshot.data!.docs;
                 var remaining_routes = route.where((doc) => !selected_routes.contains(doc.id)).toList();
-
-                // Apply search filter
+                
                 var filteredRoutes = remaining_routes.where((doc) {
                   final path = doc['path'].toString().toLowerCase();
                   return path.contains(searchQuery);

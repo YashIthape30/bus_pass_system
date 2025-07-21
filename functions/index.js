@@ -64,3 +64,26 @@ exports.resetComingAndGoing = functions.pubsub.schedule("0 0 * * *") // every da
     return null;
   });
 
+  const functions = require("firebase-functions");
+const Razorpay = require("razorpay");
+
+const instance = new Razorpay({
+  key_id: "YOUR_KEY_ID",       // 🔁 Replace with your key_id
+  key_secret: "YOUR_KEY_SECRET", // 🔁 Replace with your key_secret
+});
+
+exports.createOrder = functions.https.onCall(async (data, context) => {
+  const amount = data.amount; // from Firestore
+
+  const options = {
+    amount: amount * 100,
+    currency: "INR",
+    receipt: "receipt#1",
+    payment_capture: 1,
+  };
+
+  const order = await instance.orders.create(options);
+  return { order_id: order.id };
+});
+
+
