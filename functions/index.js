@@ -1,89 +1,66 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onRequest } = require("firebase-functions/v2/https");
+const { setGlobalOptions } = require("firebase-functions/v2");
+const admin = require("firebase-admin");
 
-const {setGlobalOptions} = require("firebase-functions");
-const {onRequest} = require("firebase-functions/https");
-const logger = require("firebase-functions/logger");
-
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
+// Initialize Firebase Admin
+admin.initializeApp();
 setGlobalOptions({ maxInstances: 10 });
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+/**
+ * Scheduled function to reset `coming` and `going` values of each pass.
+ * Runs every day at 12:00 AM IST.
+ */
+exports.resetPassValues = onSchedule("every day 00:00", {
+  timeZone: "Asia/Kolkata",
+}, async (event) => {
+  const db = admin.firestore();
+  console.log("🔁 Reset function started...");
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+  const studentsSnapshot = await db.collection("students").get();
 
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-admin.initializeApp();
+  for (const studentDoc of studentsSnapshot.docs) {
+    const studentData = studentDoc.data();
 
-exports.resetComingAndGoing = functions.pubsub.schedule("0 0 * * *") // every day at 12:00 AM
-  .timeZone("Asia/Kolkata") // set to your timezone
-  .onRun(async (context) => {
-    const db = admin.firestore();
-    const studentsRef = db.collection("students");
+    if (studentData.pass && Array.isArray(studentData.pass)) {
+      const updatedPasses = studentData.pass.map((p) => ({
+        ...p,
+        coming: 0,
+        going: 0,
+      }));
 
-    const snapshot = await studentsRef.get();
+      await studentDoc.ref.update({ pass: updatedPasses });
+    }
+  }
 
-    const batch = db.batch();
-
-    snapshot.forEach((doc) => {
-      const studentData = doc.data();
-      const passes = studentData.pass || [];
-
-      const updatedPasses = passes.map((p) => {
-        p.coming = 0;
-        p.going = 0;
-        return p;
-      });
-
-      const ref = studentsRef.doc(doc.id);
-      batch.update(ref, { pass: updatedPasses });
-    });
-
-    await batch.commit();
-    console.log("✅ All 'coming' and 'going' values reset.");
-    return null;
-  });
-
-  const functions = require("firebase-functions");
-const Razorpay = require("razorpay");
-
-const instance = new Razorpay({
-  key_id: "YOUR_KEY_ID",       // 🔁 Replace with your key_id
-  key_secret: "YOUR_KEY_SECRET", // 🔁 Replace with your key_secret
-});
-
-exports.createOrder = functions.https.onCall(async (data, context) => {
-  const amount = data.amount; // from Firestore
-
-  const options = {
-    amount: amount * 100,
-    currency: "INR",
-    receipt: "receipt#1",
-    payment_capture: 1,
-  };
-
-  const order = await instance.orders.create(options);
-  return { order_id: order.id };
+  console.log("✅ All pass values reset to 0.");
 });
 
 
+/**
+ * Manual reset function (for testing).
+ * Trigger this by visiting its URL.
+ */
+exports.manualReset = onRequest(async (req, res) => {
+  const db = admin.firestore();
+  console.log("🚀 Manual reset started...");
+
+  const studentsSnapshot = await db.collection("students").get();
+
+  for (const studentDoc of studentsSnapshot.docs) {
+    const studentData = studentDoc.data();
+
+    if (studentData.pass && Array.isArray(studentData.pass)) {
+      const updatedPasses = studentData.pass.map((p) => ({
+        ...p,
+        coming: 0,
+        going: 0,
+      }));
+
+      await studentDoc.ref.update({ pass: updatedPasses });
+    }
+  }
+
+  console.log("✅ Manual reset complete.");
+  res.send("✅ Manual reset complete.");
+});

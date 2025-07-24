@@ -1,24 +1,4 @@
 {
-  "flutter": {
-    "platforms": {
-      "android": {
-        "default": {
-          "projectId": "fir-7ec7a",
-          "appId": "1:436978868191:android:4c75dbfe0b9a435e03ee6a",
-          "fileOutput": "android/app/google-services.json"
-        }
-      },
-      "dart": {
-        "lib/firebase_options.dart": {
-          "projectId": "fir-7ec7a",
-          "configurations": {
-            "android": "1:436978868191:android:4c75dbfe0b9a435e03ee6a",
-            "web": "1:436978868191:web:a7bf635434e37d5a03ee6a"
-          }
-        }
-      }
-    }
-  },
   "functions": [
     {
       "source": "functions",
@@ -31,12 +11,12 @@
         "*.local"
       ],
       "predeploy": [
-        "npm --prefix \"$RESOURCE_DIR\" run lint"
+        "npm --prefix \"$RESOURCE_DIR\" run build"
       ]
     },
     {
-      "source": "/your_project/",
-      "codebase": "razorpay",
+      "source": "resetpass",
+      "codebase": "resetpass",
       "ignore": [
         "node_modules",
         ".git",
@@ -45,7 +25,7 @@
         "*.local"
       ],
       "predeploy": [
-        "npm --prefix \"$RESOURCE_DIR\" run lint"
+        "npm --prefix \"$RESOURCE_DIR\" run build"
       ]
     }
   ]

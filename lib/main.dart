@@ -29,8 +29,8 @@ class MainApp extends StatelessWidget {
    // print(student!.uid);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      //home: Conducter(),
-      home: student != null ? Home_Screen(stu_id: student.uid) : Registration(),
+      home: Conducter(),
+      //home: student != null ? Home_Screen(stu_id: student.uid) : Registration(),
 
         
     );
